@@ -6,6 +6,7 @@
 # Coded with pride in Ecuador, South America
 from datetime import datetime
 import os
+import itertools
 import datetime
 import ConfigParser
 import csv, codecs
@@ -440,6 +441,7 @@ class FacebookGraphAPI(object):
                                self.page,
                                api_method,
                                urllib.urlencode(params))
+        LOG.info('Making request to "%s"' % (url))
         return url
 
     def api_request(self, url):
@@ -525,18 +527,19 @@ if __name__ == '__main__':
     for name, value in settings.items('insights'):
         insight_path = 'facebook/insights/%s' % (name)
         fullpath = path(insight_path)
-        #create the paths
-        if not os.path.exists(fullpath):
-            LOG.warning('Directory "%s" not exists. Creating it...' % (fullpath))
-            try:
-                os.makedirs(fullpath)
-            except OSError:
-                LOG.error('Error creating directory: "%s".' % (fullpath))
 
         for k, v in insights_groups.iteritems():
             if (k == name) and (bool(value) is True):
                 for metric in v:
-                    filepath =
+                    filepath = os.path.join(fullpath, metric)
+                    #create the paths
+                    if not os.path.exists(filepath):
+                        LOG.warning('Directory "%s" not exists. Creating it...' % (filepath))
+                        try:
+                            os.makedirs(filepath)
+                        except OSError:
+                            LOG.error('Error creating directory: "%s".' % (filepath))
+
                     metric_name = 'insights__%s' % metric
 
                     #get insights data
@@ -547,16 +550,25 @@ if __name__ == '__main__':
                                                 datetime.datetime.today(), '%Y%m%d%H%M%S'))
                     LOG.info(csvname)
 
-                    tsvh = csv.writer(open(os.path.join(fullpath, csvname), 'wb'))
-                    header = ['Date', 'Period', 'Metric values']
-                    tsvh.writerow(header)
+                    tsvh = csv.writer(open(os.path.join(filepath, csvname), 'wb'))
+                    header = ['date', 'period', 'metric_values']
+                    #tsvh.writerow(header)
 
                     for metric in insights['data']:
                             for row in metric['values']:
-                                date = datetime.datetime.strptime(
-                                    row['end_time'], '%Y-%m-%dT%H:%M:%S+0000'
-                                    ).date() + datetime.timedelta(-1)
-                                out = [date, metric['period'], row['value']]
+                                date = datetime.datetime.strptime(row['end_time'], '%Y-%m-%dT%H:%M:%S+0000').date() + datetime.timedelta(-1)
+
+                                if type(row['value']) is dict:
+                                    values = list(row['value'].values())
+                                    print "VALORES"
+                                    print values
+                                    out = [date, metric['period']]
+                                    out = out.extend(values)
+                                else:
+                                    out = [date, metric['period'], row['value']]
+
+                                print out
+
 
                                 #write to csv file
                                 tsvh.writerow(out)
