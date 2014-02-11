@@ -298,36 +298,6 @@ insights_groups = {
                         'domain_widget_send_inbox_views',
                         'domain_widget_send_inbox_clicks',
     ],
-    "page-like-sources": [
-                        'page_suggestion',
-                        'timeline',
-                        'ads',
-                        'registration',
-                        'mobile',
-                        'wizard-suggestion',
-                        'profile-connect',
-                        'external-connect',
-                        'recommended-pages',
-                        'favorites',
-                        'api',
-                        'page-browser',
-                        'hovercard',
-                        'search',
-                        'page-profile',
-                        'ticker',
-                        'like-story',
-    ],
-    "negative-feedback-types": [
-                        'hide_all',
-                        'hide',
-                        'unlike_page',
-                        'report_spam',
-    ],
-    "positive-feedback-types": [
-                        'like',
-                        'comment',
-                        'link',
-    ],
 }
 
 
@@ -526,10 +496,10 @@ if __name__ == '__main__':
 
     for name, value in settings.items('insights'):
         insight_path = 'facebook/insights/%s' % (name)
-        fullpath = path(insight_path)
+        fullpath = os.path.join(settings.get('facebook', 'output_destination'), insight_path)
 
         for k, v in insights_groups.iteritems():
-            if (k == name) and (bool(value) is True):
+            if (k == name) and (value is True):
                 for metric in v:
                     filepath = os.path.join(fullpath, metric)
                     #create the paths
@@ -552,7 +522,7 @@ if __name__ == '__main__':
 
                     tsvh = csv.writer(open(os.path.join(filepath, csvname), 'wb'))
                     header = ['date', 'period', 'metric_values']
-                    #tsvh.writerow(header)
+                    tsvh.writerow(header)
 
                     for metric in insights['data']:
                             for row in metric['values']:
@@ -562,8 +532,8 @@ if __name__ == '__main__':
                                     values = list(row['value'].values())
                                     print "VALORES"
                                     print values
-                                    out = [date, metric['period']]
-                                    out = out.extend(values)
+                                    out = [date, metric['period'], row['value']]
+                                   # out = out.extend(values)
                                 else:
                                     out = [date, metric['period'], row['value']]
 
